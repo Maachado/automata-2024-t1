@@ -1,50 +1,55 @@
 """Implementação de autômatos finitos."""
+from unittest import result
 
 
 def load_automata(filename):
-    """
-    Lê os dados de um autômato finito a partir de um arquivo.
 
-    A estsrutura do arquivo deve ser:
+    try:
+        with open(filename, "rt") as file:
+            lines = file.read().strip().splitlines()
 
-    <lista de símbolos do alfabeto, separados por espaço (' ')>
-    <lista de nomes de estados>
-    <lista de nomes de estados finais>
-    <nome do estado inicial>
-    <lista de regras de transição, com "origem símbolo destino">
+            Sigma = lines[0]
+            Q = lines[1]
+            F = lines[2]
+            q0 = lines[3]
+            transitions = lines[4:]
 
-    Um exemplo de arquivo válido é:
-
-    ```
-    a b
-    q0 q1 q2 q3
-    q0 q3
-    q0
-    q0 a q1
-    q0 b q2
-    q1 a q0
-    q1 b q3
-    q2 a q3
-    q2 b q0
-    q3 a q1
-    q3 b q2
-    ```
-
-    Caso o arquivo seja inválido uma exceção Exception é gerada.
-
-    """
-
-    with open(filename, "rt") as arquivo:
-        # processa arquivo...
-        pass
+            delta = {state: {} for state in Q}
+            for transition in transitions:
+                splitteddelta = transition.split()
+                state_a, symbol, state_b = splitteddelta[0], splitteddelta[1], splitteddelta[2]
+                if symbol in delta[state_a]:
+                    delta[state_a][symbol] = state_b
+            return Q, Sigma, delta, q0, set(F)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Arquivo {filename} não encontrado.")
+    except Exception as error:
+        raise error
 
 
 def process(automata, words):
-    """
-    Processa a lista de palavras e retora o resultado.
-    
-    Os resultados válidos são ACEITA, REJEITA, INVALIDA.
-    """
 
+    Q, Sigma, delta, q0, F = automata
+    answer = {}
     for word in words:
-        # tenta reconhecer `word`
+        current_state = q0
+        invalid = False
+
+        for char in word:
+            if char not in Sigma:
+
+                answer[word] = "INVÁLIDA"
+                invalid = True
+                break
+            try:
+                current_state = delta[current_state][char]
+            except KeyError:
+                answer[word] = "REJEITA"
+                invalid = True
+                break
+        if not invalid:
+            if current_state in F:
+                answer[word] = "ACEITA"
+            else:
+                answer[word] = "REJEITA"
+    return answer
